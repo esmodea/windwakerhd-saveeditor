@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A private, browser-only save editor for The Legend of Zelda: The Wind Waker HD.">
+  <meta name="theme-color" content="#10221d">
+  <title>Wind Waker HD Save Editor</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Browser-only utility</p>
+      <h1>Wind Waker HD<br><span>Save Editor</span></h1>
+      <p>Edit a focused set of high-confidence fields in <code>cking.sav</code>. Your save stays entirely on your device.</p>
+    </div>
+    <div class="privacy-card">
+      <strong>No server. No upload.</strong>
+      <span>The site has no analytics, API calls, accounts, or backend.</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="warning" aria-label="Backup warning">
+      <span class="warning-icon">!</span>
+      <div>
+        <strong>Back up the entire Cemu save directory first.</strong>
+        <p>This tool creates a modified copy. Never overwrite your only known-good save.</p>
+      </div>
+    </section>
+
+    <section id="status" class="status" hidden role="status"></section>
+
+    <section id="empty-state" class="upload-panel">
+      <label id="drop-zone" class="drop-zone" for="file-input">
+        <input id="file-input" type="file" accept=".sav,application/octet-stream" hidden>
+        <span class="upload-mark">↥</span>
+        <strong>Open cking.sav</strong>
+        <span>Drop the raw file here or choose it from your device</span>
+        <small>Expected size: 8,966 bytes · ZIP files are not accepted</small>
+      </label>
+      <details class="help-card">
+        <summary>Where is cking.sav?</summary>
+        <p>In Cemu, right-click Wind Waker HD, choose <strong>Save directory</strong>, then open the numbered user folder. Copy <code>cking.sav</code> somewhere safe before editing.</p>
+      </details>
+    </section>
+
+    <section id="editor" hidden>
+      <div class="editor-heading">
+        <div>
+          <p class="eyebrow">Loaded locally</p>
+          <h2>Quest logs</h2>
+          <p id="file-details" class="muted"></p>
+        </div>
+        <div class="header-actions">
+          <button id="repair-checksums" class="button secondary" type="button">Repair checksums</button>
+          <button id="reset-all" class="button ghost" type="button">Discard all edits</button>
+        </div>
+      </div>
+
+      <nav id="slot-tabs" class="slot-tabs" aria-label="Quest logs"></nav>
+      <div id="slot-summary" class="summary-grid"></div>
+
+      <form id="slot-form" autocomplete="off">
+        <section class="editor-card">
+          <div class="card-heading">
+            <div>
+              <p class="section-kicker">Identity</p>
+              <h3>Player name</h3>
+            </div>
+            <span class="confidence high">High confidence</span>
+          </div>
+          <div class="field-grid compact">
+            <label class="field wide">
+              <span>Name</span>
+              <input name="displayName" type="text" maxlength="8" pattern="[ -~]+" required>
+              <small>Up to 8 basic ASCII characters. Updates the menu name and all internal name copies.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="editor-card">
+          <div class="card-heading">
+            <div>
+              <p class="section-kicker">Core values</p>
+              <h3>Status</h3>
+            </div>
+            <span class="confidence high">High confidence</span>
+          </div>
+          <div class="field-grid">
+            <label class="field"><span>Maximum hearts</span><input name="maxHearts" type="number" min="0.25" max="20" step="0.25"></label>
+            <label class="field"><span>Current hearts</span><input name="currentHearts" type="number" min="0.25" max="20" step="0.25"></label>
+            <label class="field"><span>Wallet</span><select name="walletLevel"><option value="0">200 rupees</option><option value="1">1,000 rupees</option><option value="2">5,000 rupees</option></select></label>
+            <label class="field"><span>Rupees</span><input name="rupees" type="number" min="0" max="5000" step="1"></label>
+            <label class="field"><span>Maximum magic</span><select name="maxMagic"><option value="0">No meter</option><option value="16">Standard meter</option><option value="32">Double meter</option></select></label>
+            <label class="field"><span>Current magic</span><input name="currentMagic" type="number" min="0" max="32" step="1"></label>
+          </div>
+        </section>
+
+        <section class="editor-card">
+          <div class="card-heading">
+            <div>
+              <p class="section-kicker">Capacity and count</p>
+              <h3>Ammunition</h3>
+            </div>
+            <span class="confidence high">High confidence</span>
+          </div>
+          <div class="field-grid">
+            <label class="field"><span>Maximum arrows</span><input name="maxArrows" type="number" min="0" max="99" step="1"></label>
+            <label class="field"><span>Current arrows</span><input name="arrows" type="number" min="0" max="99" step="1"></label>
+            <label class="field"><span>Maximum bombs</span><input name="maxBombs" type="number" min="0" max="99" step="1"></label>
+            <label class="field"><span>Current bombs</span><input name="bombs" type="number" min="0" max="99" step="1"></label>
+          </div>
+        </section>
+
+        <section class="editor-card">
+          <div class="card-heading">
+            <div>
+              <p class="section-kicker">Fixed inventory positions</p>
+              <h3>Inventory and bottles</h3>
+            </div>
+            <span class="confidence high">High confidence</span>
+          </div>
+          <p class="card-note">Each control edits the item assigned to its normal inventory position. Unsupported item IDs remain untouched until you choose a replacement.</p>
+          <div id="inventory-grid" class="field-grid inventory-grid"></div>
+        </section>
+
+        <section class="editor-card caution-card">
+          <div class="card-heading">
+            <div>
+              <p class="section-kicker">Use cautiously</p>
+              <h3>Basic equipment</h3>
+            </div>
+            <span class="confidence medium">May bypass progression</span>
+          </div>
+          <p class="card-note">These bytes are well understood, but granting late-game equipment early can create story-state inconsistencies. The editor does not alter related cutscene or dungeon flags.</p>
+          <div id="equipment-grid" class="field-grid"></div>
+        </section>
+      </form>
+
+      <section class="changes-card">
+        <div class="card-heading">
+          <div>
+            <p class="section-kicker">Review</p>
+            <h3>Pending changes</h3>
+          </div>
+          <button id="reset-slot" class="button ghost" type="button">Reset selected log</button>
+        </div>
+        <div id="change-list"></div>
+      </section>
+
+      <div class="download-bar">
+        <div>
+          <strong>Checksums are recalculated automatically.</strong>
+          <span>The original file in your browser session is never overwritten.</span>
+        </div>
+        <button id="download-save" class="button primary" type="button" disabled>Download modified save</button>
+      </div>
+    </section>
+
+    <section class="scope">
+      <h2>Deliberately limited scope</h2>
+      <p>This first version does not edit story flags, charts, dungeon state, return locations, Second Quest status, playlog data, Miiverse data, or pictographs. Those areas are more interconnected and deserve separate, carefully tested tools.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Unofficial fan-made utility. Not affiliated with Nintendo, Cemu, or the Zelda project.</p>
+    <p>Source code is designed for GitHub Pages and contains no network requests.</p>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
